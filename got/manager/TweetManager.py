@@ -1,12 +1,16 @@
 import urllib,urllib2,json,re,datetime,sys,cookielib
 from .. import models
+
 from pyquery import PyQuery
 
 class TweetManager:
 	
+
+
 	def __init__(self):
 		pass
-		
+
+
 	@staticmethod
 	def getTweets(tweetCriteria, receiveBuffer=None, bufferLength=100, proxy=None):
 		refreshCursor = ''

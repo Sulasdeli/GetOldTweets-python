@@ -1,4 +1,7 @@
 import sys,getopt,datetime,codecs
+import re
+from string import ascii_letters, punctuation
+
 if sys.version_info[0] < 3:
     import got
 else:
@@ -28,19 +31,18 @@ def main():
 			interval = range(1,8)
 			month = "1"
 		for i in interval:
-			asd=""
- 
+			prefix=""
 			if i<10:
-				asd ="0"
+				prefix ="0"
 			else:
-				asd = ""
+				prefix = ""
 			if y==2017 and i ==31:
-				print("ERIONI FROCIO")
-				tweetCriteria = got.manager.TweetCriteria().setQuerySearch('XRP').setSince("2017-12-31").setUntil("2018-01-01").setMaxTweets(2)
+				tweetCriteria = got.manager.TweetCriteria().setQuerySearch('XRP ripple').setSince("2017-12-31").setUntil("2018-01-01").setMaxTweets(100)
 				tweets.append(got.manager.TweetManager.getTweets(tweetCriteria))
 			else:
-				tweetCriteria = got.manager.TweetCriteria().setQuerySearch('XRP').setSince(str(y)+"-"+month+"-"+asd+str(i)).setUntil(str(y)+"-"+month+"-"+asd+str(i+1)).setMaxTweets(2)
+				tweetCriteria = got.manager.TweetCriteria().setQuerySearch('XRP ripple').setSince(str(y)+"-"+month+"-"+prefix+str(i)).setUntil(str(y)+"-"+month+"-"+prefix+str(i+1)).setMaxTweets(100)
 				tweets.append(got.manager.TweetManager.getTweets(tweetCriteria))
+			print(str(y)+"-"+month+"-"+prefix+str(i))
 	
 	#tweetCriteria2 = got.manager.TweetCriteria().setQuerySearch('XRP').setSince("2017-12-08").setUntil("2017-12-09").setMaxTweets(2)
 	#tweets.append(got.manager.TweetManager.getTweets(tweetCriteria2))
@@ -51,14 +53,20 @@ def main():
 	outputFileName = "output_got.csv"
 	outputFile = codecs.open(outputFileName, "w+", "utf-8")
 
-	outputFile.write('date;retweets;text;hashtags')
+	outputFile.write('date;retweets;text;hashtags;permalink')
 
 
 
 
+	allowed = set(ascii_letters)
 	for tw in tweets:
-		for t in tw:
-			outputFile.write(('\n%s;%d;"%s";"%s"' % (t.date.strftime("%Y-%m-%d %H:%M"), t.retweets, t.text, t.hashtags)))
+		counter = 0;
+		output = [tweet for tweet in tw if any(letter in allowed for letter in tweet.text[:2])]
+		for t in output:
+			printTweet(t)
+			if counter < 5 and re.search(r'btc|bitcoin|ethereum|eth',t.text.lower()) is None:
+				counter+=1
+				outputFile.write(('\n%s;%d;"%s";"%s";"%s"' % (t.date.strftime("%Y-%m-%d"), t.retweets, t.text, t.hashtags,t.permalink)))
 	outputFile.flush()
 	print('More %d saved on file...\n' % len(tweets)*2)
 
