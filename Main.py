@@ -3,6 +3,7 @@ import re
 import random as rn
 from string import ascii_letters, punctuation
 import requests
+import json
 
 if sys.version_info[0] < 3:
     import got
@@ -70,19 +71,21 @@ def main():
 			#From 100 tweets per day, select 5 randomly
 			choice = rn.randint(0,10)
 			print(choice)
-			if choice < 5 and counter < 5 and re.search(r'btc|bitcoin|ethereum|eth',t.text.lower()) is None:
+			if choice <5 and counter < 5 and re.search(r'btc|bitcoin|ethereum|eth',t.text.lower()) is None:
 				counter+=1
-				outputFile.write(('\n%s;%d;"%s";"%s";"%s";"%s"' % (t.date.strftime("%Y-%m-%d"), t.retweets, t.text, t.hashtags,t.id,t.permalink)))
+				res =  sentimentAnalysis(t.text,t.id)
+				outputFile.write(('\n%s;%d;"%s";"%s";"%s";"%d";"%s"' % (t.date.strftime("%Y-%m-%d"), t.retweets, t.text, t.hashtags,t.id,res,t.permalink)))
 	outputFile.flush()
 	print('More %d saved on file...\n' % len(tweets)*2)
 
 
-def sentimentAnalysis():
-
-	r = requests.post("http://www.sentiment140.com/api/bulkClassifyJson", {
-'data': [{'text': "i. invest also. i don't understand wich time xrp up", 'id': 940007675131191000}]})
+def sentimentAnalysis(tweetText,tweetId):
+	print("ASD")
+	r = requests.post("http://www.sentiment140.com/api/bulkClassifyJson",json.dumps( {
+'data':[{'text': tweetText[:30], 'id': tweetId}]}))
 	print(r.status_code, r.reason)
-	print(r.text[:300] + '...')
+	print(json.loads(r.text)["data"][0]["polarity"])
+	return (json.loads(r.text)["data"][0]["polarity"])
 
 if __name__ == '__main__':
 	main()
