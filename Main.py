@@ -1,7 +1,10 @@
+# _*_ coding=utf-8 _*_
+
 import sys,getopt,datetime,codecs
 import re
 import random as rn
 from string import ascii_letters, punctuation
+import string
 import requests
 import json
 
@@ -46,45 +49,34 @@ def main():
 			else:
 				tweetCriteria = got.manager.TweetCriteria().setQuerySearch('XRP ripple').setSince(str(y)+"-"+month+"-"+prefix+str(i)).setUntil(str(y)+"-"+month+"-"+prefix+str(i+1)).setMaxTweets(100)
 				tweets.append(got.manager.TweetManager.getTweets(tweetCriteria))
-			print(str(y)+"-"+month+"-"+prefix+str(i))
-	
-	#tweetCriteria2 = got.manager.TweetCriteria().setQuerySearch('XRP').setSince("2017-12-08").setUntil("2017-12-09").setMaxTweets(2)
-	#tweets.append(got.manager.TweetManager.getTweets(tweetCriteria2))
-
-	#for tweet in tweets:
-	#	for tw in tweet:	
-	#		printTweet(tw)
+			print("extracting 100 tweets from:"+str(y)+"-"+month+"-"+prefix+str(i))
 	outputFileName = "output_got.csv"
 	outputFile = codecs.open(outputFileName, "w+", "utf-8")
 
-	outputFile.write('date;retweets;text;hashtags;id;polarity;permalink')
+	outputFile.write('date;text;id;polarity;permalink')
 
 
 
-
-	allowed = set(ascii_letters)
 	for tw in tweets:
 		counter = 0;
-		output = [tweet for tweet in tw if any(letter in allowed for letter in tweet.text[:2])]
+		output = [tweet for tweet in tw  if isEnglish(tweet.text)]
 		for t in output:
-			printTweet(t)
 			#From 100 tweets per day, select 5 randomly
 			choice = rn.randint(0,10)
-			print(choice)
 			if choice <5 and counter < 5 and re.search(r'btc|bitcoin|ethereum|eth',t.text.lower()) is None:
 				counter+=1
 				res =  sentimentAnalysis(t.text,t.id)
-				outputFile.write(('\n%s;%d;"%s";"%s";"%s";"%d";"%s"' % (t.date.strftime("%Y-%m-%d"), t.retweets, t.text, t.hashtags,t.id,res,t.permalink)))
+				outputFile.write(('\n%s;"%s";"%s";"%d";"%s"' % (t.date.strftime("%Y-%m-%d"), t.text,t.id,res,t.permalink)))
 	outputFile.flush()
-	print('More %d saved on file...\n' % len(tweets)*2)
+
+
+def isEnglish(s):
+    return all(ord(c) < 128 for c in s)
 
 
 def sentimentAnalysis(tweetText,tweetId):
-	print("ASD")
 	r = requests.post("http://www.sentiment140.com/api/bulkClassifyJson",json.dumps( {
 'data':[{'text': tweetText[:30], 'id': tweetId}]}))
-	print(r.status_code, r.reason)
-	print(json.loads(r.text)["data"][0]["polarity"])
 	return (json.loads(r.text)["data"][0]["polarity"])
 
 if __name__ == '__main__':
