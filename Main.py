@@ -1,6 +1,8 @@
 import sys,getopt,datetime,codecs
 import re
+import random as rn
 from string import ascii_letters, punctuation
+import requests
 
 if sys.version_info[0] < 3:
     import got
@@ -16,6 +18,7 @@ def main():
 		print("Mentions: %s" % t.mentions)
 		print("Hashtags: %s\n" % t.hashtags)
 		print("Date: %s\n" % t.date)
+		print("Date: %s\n" % t.id)
 
 
 
@@ -53,7 +56,7 @@ def main():
 	outputFileName = "output_got.csv"
 	outputFile = codecs.open(outputFileName, "w+", "utf-8")
 
-	outputFile.write('date;retweets;text;hashtags;permalink')
+	outputFile.write('date;retweets;text;hashtags;id;polarity;permalink')
 
 
 
@@ -64,12 +67,23 @@ def main():
 		output = [tweet for tweet in tw if any(letter in allowed for letter in tweet.text[:2])]
 		for t in output:
 			printTweet(t)
-			if counter < 5 and re.search(r'btc|bitcoin|ethereum|eth',t.text.lower()) is None:
+			#From 100 tweets per day, select 5 randomly
+			choice = rn.randint(0,10)
+			print(choice)
+			if choice < 5 and counter < 5 and re.search(r'btc|bitcoin|ethereum|eth',t.text.lower()) is None:
 				counter+=1
-				outputFile.write(('\n%s;%d;"%s";"%s";"%s"' % (t.date.strftime("%Y-%m-%d"), t.retweets, t.text, t.hashtags,t.permalink)))
+				outputFile.write(('\n%s;%d;"%s";"%s";"%s";"%s"' % (t.date.strftime("%Y-%m-%d"), t.retweets, t.text, t.hashtags,t.id,t.permalink)))
 	outputFile.flush()
 	print('More %d saved on file...\n' % len(tweets)*2)
 
 
+def sentimentAnalysis():
+
+	r = requests.post("http://www.sentiment140.com/api/bulkClassifyJson", {
+'data': [{'text': "i. invest also. i don't understand wich time xrp up", 'id': 940007675131191000}]})
+	print(r.status_code, r.reason)
+	print(r.text[:300] + '...')
+
 if __name__ == '__main__':
 	main()
+
